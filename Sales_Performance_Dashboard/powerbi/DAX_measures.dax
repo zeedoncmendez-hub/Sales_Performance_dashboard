@@ -1,0 +1,74 @@
+// =============================================================
+// Sales Performance Dashboard | DAX measures for Power BI
+// Create a blank table called _Measures (Home > Enter data > OK)
+// and add each measure below to it (Modeling > New measure).
+// Table names match the CSV files in powerbi/model_data.
+// =============================================================
+
+// ---------- Core KPIs ----------
+Total Sales =
+SUM ( fact_sales[sales] )
+
+Total Profit =
+SUM ( fact_sales[profit] )
+
+Profit Margin % =
+DIVIDE ( [Total Profit], [Total Sales] )
+
+Total Orders =
+DISTINCTCOUNT ( fact_sales[order_id] )
+
+Total Customers =
+DISTINCTCOUNT ( fact_sales[customer_key] )
+
+Avg Order Value =
+DIVIDE ( [Total Sales], [Total Orders] )
+
+Units Sold =
+SUM ( fact_sales[quantity] )
+
+Avg Discount % =
+AVERAGE ( fact_sales[discount] )
+
+Avg Days to Ship =
+AVERAGE ( fact_sales[days_to_ship] )
+
+// ---------- Time intelligence (needs dim_date marked as a date table) ----------
+Sales PY =
+CALCULATE ( [Total Sales], SAMEPERIODLASTYEAR ( dim_date[full_date] ) )
+
+Sales YoY % =
+DIVIDE ( [Total Sales] - [Sales PY], [Sales PY] )
+
+Profit PY =
+CALCULATE ( [Total Profit], SAMEPERIODLASTYEAR ( dim_date[full_date] ) )
+
+Profit YoY % =
+DIVIDE ( [Total Profit] - [Profit PY], [Profit PY] )
+
+Sales YTD =
+TOTALYTD ( [Total Sales], dim_date[full_date] )
+
+// ---------- Profit drivers ----------
+Loss-Making Lines =
+CALCULATE ( COUNTROWS ( fact_sales ), fact_sales[profit] < 0 )
+
+Profit from Discounts Above 20% =
+CALCULATE ( [Total Profit], fact_sales[discount] > 0.2 )
+
+Share of Sales =
+DIVIDE ( [Total Sales], CALCULATE ( [Total Sales], ALL ( fact_sales ) ) )
+
+// ---------- Ranking (use in a table visual with dim_product[sub_category]) ----------
+Sub-Category Profit Rank =
+RANKX ( ALL ( dim_product[sub_category] ), [Total Profit], , DESC, DENSE )
+
+// ---------- Calculated column on fact_sales (Modeling > New column) ----------
+// Discount Band =
+// SWITCH (
+//     TRUE (),
+//     fact_sales[discount] = 0,    "1) No discount",
+//     fact_sales[discount] <= 0.2, "2) 1-20%",
+//     fact_sales[discount] <= 0.4, "3) 21-40%",
+//     "4) Above 40%"
+// )
